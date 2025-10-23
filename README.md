@@ -1,5 +1,6 @@
 # Table of Content
 
+- [Solution Implementation](#solution-implementation)
 - [Welcome to *Swarm-Rescue*](#welcome-to-swarm-rescue)
 - [The Competition](#the-competition)
 - [Simple-Playgrounds](#simple-playgrounds)
@@ -7,6 +8,130 @@
 - [Elements of the environment](#elements-of-the-environment)
 - [Programming](#programming)
 - [Contact](#contact)
+
+# Solution Implementation
+
+This repository contains a complete autonomous drone swarm implementation for the Swarm-Rescue competition. The solution is located in the `src/swarm_rescue/solutions/` directory and consists of the following key components:
+
+## Overview
+
+The solution implements a multi-state autonomous drone controller that performs simultaneous mapping and exploration (SLAM), frontier-based exploration, path planning, and collaborative rescue operations. The system operates in a decentralized manner with inter-drone communication for map sharing and coordination.
+
+## Architecture
+
+### Core Components
+
+**`my_drone_eval.py`** - Main drone controller implementing a finite state machine with the following states:
+
+- **WAITING**: Initial state for synchronization
+- **SEARCHING_WALL**: Searching for walls to begin exploration
+- **FOLLOWING_WALL**: Wall following behavior using PID control
+- **EXPLORING_FRONTIERS**: Frontier-based exploration using DBSCAN clustering
+- **GRASPING_WOUNDED**: Approaching and grasping wounded persons
+- **SEARCHING_RESCUE_CENTER**: Planning path to rescue center
+- **GOING_RESCUE_CENTER**: Executing path to rescue center
+- **SEARCHING_RETURN_AREA**: Searching for return area
+- **GOING_RETURN_AREA**: Moving to return area
+
+**`grids.py`** - Occupancy grid mapping system:
+
+- Real-time map building using LiDAR and semantic sensors
+- Frontier detection and clustering using DBSCAN algorithm
+- Path computation with A* algorithm and obstacle inflation
+- Map merging between drones for collaborative exploration
+- Path simplification using multiple algorithms (collinear removal, line-of-sight, Ramer-Douglas-Peucker)
+
+**`astar.py`** - Path planning algorithms:
+
+- A* search with octile heuristic for 8-directional movement
+- Obstacle inflation for safe navigation
+- Path simplification to reduce waypoints
+- Bresenham line algorithm for line-of-sight checking
+
+**`data_config.py`** - Configuration parameters:
+
+- Mapping parameters (resolution, thresholds)
+- PID controller gains for rotation and translation
+- Grid parameters (obstacle inflation, frontier detection)
+- Communication parameters (update intervals)
+
+**`position.py`** - Position estimation:
+
+- GPS and odometry integration
+- Handles GPS-denied zones gracefully
+- Position tracking with noise compensation
+
+**`messages.py`** - Communication protocol:
+
+- Message types: MAPPING, LOCK_WOUNDED, PASS
+- Enables map sharing and collision avoidance
+
+**`my_evaluation.py`** - Evaluation framework:
+
+- Automated testing on multiple maps
+- Performance metrics collection
+- Statistical analysis across multiple runs
+
+## Key Features
+
+### Simultaneous Localization and Mapping (SLAM)
+
+- Builds occupancy grid map in real-time
+- Uses LiDAR for obstacle detection
+- Semantic sensor for detecting wounded persons and rescue center
+- Handles sensor noise and GPS-denied zones
+
+### Frontier-Based Exploration
+
+- Detects unexplored frontiers efficiently
+- Uses DBSCAN clustering to group frontier points
+- Hungarian algorithm for optimal drone-to-frontier assignment
+- Prioritizes large, close frontiers
+
+### Collaborative Mapping
+
+- Drones share maps via communication
+- Merges received maps to expand exploration
+- Reduces redundancy and improves coverage
+
+### Path Planning
+
+- Multi-level obstacle inflation for safety
+- Falls back to lower inflation if path blocked
+- Path simplification reduces computational overhead
+- Line-of-sight checking for optimal paths
+
+### PID Control
+
+- Separate controllers for rotation and translation
+- Proportional, derivative, and integral terms
+- Smooth wall following and path execution
+
+### Collision Avoidance
+
+- Locks wounded persons to prevent multiple drones from targeting same victim
+- Avoids detecting other drones as obstacles
+- Maintains safe distance from walls
+
+## Usage
+
+The solution can be tested using the evaluation framework:
+
+```python
+from solutions.my_evaluation import evaluate_drone
+from maps.map_intermediate_02 import MyMapIntermediate02
+
+evaluate_drone(nb_rounds=2, nb_drones=5, map_type=MyMapIntermediate02, nb_wounded=20)
+```
+
+## Performance
+
+The implementation balances exploration efficiency, rescue speed, and coordination to maximize the competition score based on:
+
+- Percentage of wounded persons rescued
+- Percentage of map explored
+- Drone health preservation
+- Time efficiency
 
 # Welcome to *Swarm-Rescue*
 
